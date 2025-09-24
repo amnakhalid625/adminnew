@@ -1,4 +1,4 @@
-const API_URL = "https://backend-production-5823.up.railway.app/api";
+const API_URL = "https://backend-production-5823.up.railway.app/api"; // Base API URL (removed /admin)
 
 // A helper function to handle API requests
 const apiRequest = async (endpoint, method = 'GET', body = null) => {
@@ -8,7 +8,7 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            credentials: 'include', // ✅ ADD THIS LINE - Most Important!
+            credentials: 'include', // ✅ ADD THIS - Most Important!
         };
 
         if (body) {
@@ -29,22 +29,25 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
     }
 };
 
-// Specific admin API functions
-export const adminAPI = {
-    // Admin Login
-    login: (credentials) => apiRequest('/auth/admin-login', 'POST', credentials),
-    
-    // Admin Signup  
-    signup: (userData) => apiRequest('/auth/admin-sign-up', 'POST', userData),
-    
-    // Get Admin Stats
-    getStats: () => apiRequest('/admin/stats', 'GET'),
-    
-    // Get Admin Statics
-    getStatics: () => apiRequest('/admin/statics', 'GET'),
-    
-    // Logout
+// Specific API functions for different modules
+export const authAPI = {
+    adminLogin: (credentials) => apiRequest('/auth/admin-login', 'POST', credentials),
+    adminSignUp: (userData) => apiRequest('/auth/admin-sign-up', 'POST', userData),
     logout: () => apiRequest('/auth/logout', 'POST'),
+};
+
+export const adminAPI = {
+    getStats: () => apiRequest('/admin/stats', 'GET'),
+    getStatics: () => apiRequest('/admin/statics', 'GET'),
+};
+
+export const productAPI = {
+    getProducts: () => apiRequest('/product/', 'GET'),
+};
+
+export const bannerAPI = {
+    createBanner: (bannerData) => apiRequest('/banner', 'POST', bannerData),
+    getBanners: () => apiRequest('/banner', 'GET'),
 };
 
 export default apiRequest;
