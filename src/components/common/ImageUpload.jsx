@@ -7,6 +7,9 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
     );
     const fileInputRef = useRef(null);
 
+    // FIXED: Use production backend URL instead of localhost
+    const BACKEND_URL = "https://backend-production-5823.up.railway.app";
+
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
         
@@ -45,6 +48,22 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
         }
     };
 
+    // FIXED: Better image URL construction
+    const getImageUrl = (file) => {
+        // For new uploads (blob URLs)
+        if (file.url.startsWith("blob:")) {
+            return file.url;
+        }
+        
+        // For existing images from database
+        // Remove leading slash if present to avoid double slash
+        const imagePath = file.url.startsWith('/') ? file.url.substring(1) : file.url;
+        const fullUrl = `${BACKEND_URL}/${imagePath}`;
+        
+        console.log('Constructed image URL:', fullUrl);
+        return fullUrl;
+    };
+
     return (
         <div>
             <div
@@ -73,16 +92,18 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
                     {files.map((file, index) => (
                         <div key={index} className="relative group">
                             <img
-                                src={
-                                    file.url.startsWith("blob:")
-                                        ? file.url
-                                        : `http://localhost:8080${file.url}`
-                                }
+                                src={getImageUrl(file)}
                                 alt={file.name}
                                 className="w-full h-24 object-cover rounded-lg border"
                                 onError={(e) => {
-                                    console.error('Image load error:', e);
-                                    e.target.style.display = 'none';
+                                    console.error('Image load error for URL:', getImageUrl(file));
+                                    console.error('Error event:', e);
+                                    // Show a placeholder or hide the broken image
+                                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA4VjE2TTggMTJIMTZNMjIgMTJDMjIgMTcuNTIyOCAxNy41MjI4IDIyIDEyIDIyQzYuNDc3MTUgMjIgMiAxNy41MjI4IDIgMTJDMiA2LjQ3NzE1IDYuNDc3MTUgMiAxMiAyQzE3LjUyMjggMiAyMiA2LjQ3NzE1IDIyIDEyWiIgc3Ryb2tlPSIjOUM5Qzk2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+';
+                                    e.target.className += ' opacity-50';
+                                }}
+                                onLoad={() => {
+                                    console.log('Image loaded successfully:', getImageUrl(file));
                                 }}
                             />
                             <button
@@ -92,10 +113,11 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
                             >
                                 <X size={14} />
                             </button>
-                            {/* Debug info - remove in production */}
+                            {/* Enhanced debug info */}
                             {process.env.NODE_ENV === 'development' && (
-                                <div className="text-xs text-gray-500 mt-1 text-center">
-                                    {file.file?.type || 'existing'}
+                                <div className="text-xs text-gray-500 mt-1 text-center bg-white p-1 rounded">
+                                    <div>Type: {file.file?.type || 'existing'}</div>
+                                    <div>URL: {getImageUrl(file)}</div>
                                 </div>
                             )}
                         </div>
