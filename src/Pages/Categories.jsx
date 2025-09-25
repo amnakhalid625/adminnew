@@ -49,7 +49,7 @@ const CategoryList = () => {
                     <img
                         src={
                             info.getValue()
-                                ? `https://backend-production-5823.up.railway.app${info.getValue()}`
+                                ? `http://localhost:8080${info.getValue()}`
                                 : "https://via.placeholder.com/64"
                         }
                         alt="Category"

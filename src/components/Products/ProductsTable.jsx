@@ -51,7 +51,7 @@ const ProductsTable = ({
                     const product = info.row.original;
                     const image =
                         product.images && product.images.length > 0
-                            ? `https://backend-production-5823.up.railway.app${product.images[0]}`
+                            ? `http://localhost:8080${product.images[0]}`
                             : "https://via.placeholder.com/50";
                     return (
                         <div className="flex items-center gap-3">

@@ -76,7 +76,7 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
                                 src={
                                     file.url.startsWith("blob:")
                                         ? file.url
-                                        : `https://backend-production-5823.up.railway.app${file.url}`
+                                        : `http://localhost:8080${file.url}`
                                 }
                                 alt={file.name}
                                 className="w-full h-24 object-cover rounded-lg border"

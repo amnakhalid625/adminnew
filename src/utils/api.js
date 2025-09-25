@@ -1,4 +1,4 @@
-const API_URL = "https://backend-production-5823.up.railway.app/api";
+const API_URL = "http://localhost:8080/api";
 
 // Enhanced API request helper with better error handling and logging
 const apiRequest = async (endpoint, method = 'GET', body = null) => {

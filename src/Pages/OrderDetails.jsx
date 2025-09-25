@@ -80,7 +80,7 @@ const OrderDetails = () => {
                                         <tr key={item.product?._id || item._id}>
                                             <td className="p-4 flex items-center gap-4">
                                                 <img
-                                                    src={item.product?.images?.[0] ? `https://backend-production-5823.up.railway.app${item.product.images[0]}` : 'https://via.placeholder.com/64'}
+                                                    src={item.product?.images?.[0] ? `http://localhost:8080${item.product.images[0]}` : 'https://via.placeholder.com/64'}
                                                     alt={item.product?.name}
                                                     className="w-16 h-16 rounded-md object-cover bg-gray-100"
                                                 />

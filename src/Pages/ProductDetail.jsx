@@ -55,7 +55,7 @@ const ProductDetail = () => {
 
     const getImageUrl = (path) => {
         if (!path) return 'https://via.placeholder.com/500';
-        return `https://backend-production-5823.up.railway.app${path}`;
+        return `http://localhost:8080${path}`;
     };
 
     if (loading || !productData?._id) {
