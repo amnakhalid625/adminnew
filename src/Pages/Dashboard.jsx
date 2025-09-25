@@ -1,33 +1,41 @@
-import { Link } from "react-router-dom";
-import StatsCard from "../components/Dashboard/StatesCard";
-import Charts from "../components/Dashboard/Chart.jsx";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-
+import { useSelector } from "react-redux";
 import {
     FiUsers,
     FiShoppingCart,
     FiPackage,
     FiTag,
     FiPlus,
+    FiAlertCircle,
+    FiRefreshCw
 } from "react-icons/fi";
+
+// Import your components
+import StatsCard from "../components/Dashboard/StatesCard";
+import Charts from "../components/Dashboard/Chart.jsx";
 import ProductTable from "../components/Products/ProductsTable";
 import useProducts from "../hooks/useProducts";
-import { useGetAdminStats } from "../api/internal.jsx";
-import { useEffect } from "react";
-import { useState } from "react";
-import { useSelector } from "react-redux";
+
+// Import the fixed API hooks
+import { useGetAdminStats, useSessionCheck } from "../api/internal.jsx";
 
 const Dashboard = () => {
-    const { getAdminStats, loading, error } = useGetAdminStats();
+    const navigate = useNavigate();
+    const { getAdminStats, loading: statsLoading, error: statsError } = useGetAdminStats();
+    const { checkSession, loading: sessionLoading } = useSessionCheck();
+    
     const [stats, setStats] = useState(null);
+    const [sessionValid, setSessionValid] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
 
-    // Get admin user info from Redux or local storage
+    // Get user info from Redux
     const adminInfo = useSelector((state) => state.orebiReducer?.adminInfo);
     const userInfo = useSelector((state) => state.orebiReducer?.userInfo);
-    
-    // Use admin info if available, otherwise use regular user info
     const user = adminInfo || userInfo;
 
+    // Product table hooks
     const {
         data,
         globalFilter,
@@ -38,26 +46,62 @@ const Dashboard = () => {
         handleDeleteProduct,
     } = useProducts();
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                console.log('Fetching dashboard stats...');
-                const data = await getAdminStats();
-                console.log('Dashboard stats received:', data);
-                setStats(data);
-            } catch (error) {
-                console.error('Error fetching dashboard stats:', error);
-                toast.error(error.message || 'Failed to fetch dashboard stats');
-                // Set empty stats to stop loading
+    // Function to verify session and fetch stats
+    const initializeDashboard = async () => {
+        try {
+            console.log('Initializing dashboard...');
+            
+            // First, check if session is valid
+            const sessionData = await checkSession();
+            console.log('Session check result:', sessionData);
+            
+            if (!sessionData.hasUser || !sessionData.isAdmin) {
+                console.log('Invalid session or not admin, redirecting to login');
+                toast.error('Please log in as admin to access dashboard');
+                navigate('/admin/login');
+                return;
+            }
+            
+            setSessionValid(true);
+            
+            // If session is valid, fetch stats
+            console.log('Session valid, fetching stats...');
+            const statsData = await getAdminStats();
+            console.log('Stats received:', statsData);
+            setStats(statsData);
+            
+            toast.success('Dashboard loaded successfully');
+            
+        } catch (error) {
+            console.error('Dashboard initialization error:', error);
+            
+            if (error.response?.status === 401) {
+                console.log('Unauthorized, redirecting to login');
+                toast.error('Session expired. Please log in again.');
+                navigate('/admin/login');
+            } else {
+                console.log('Error fetching dashboard data:', error.message);
+                toast.error(`Failed to load dashboard: ${error.message}`);
+                // Set empty stats to stop loading state
                 setStats({});
             }
-        };
+        }
+    };
 
-        // Only fetch once on component mount
-        fetchStats();
-    }, []); // Empty dependency array - only run once
+    // Retry function
+    const handleRetry = () => {
+        setRetryCount(prev => prev + 1);
+        setStats(null);
+        setSessionValid(false);
+    };
 
-    const dashboardstats = [
+    // Initialize dashboard on component mount and when retry is clicked
+    useEffect(() => {
+        initializeDashboard();
+    }, [retryCount]); // Re-run when retryCount changes
+
+    // Dashboard stats configuration
+    const dashboardStats = [
         {
             title: "Total Users",
             value: stats?.totalUsers || 0,
@@ -83,7 +127,7 @@ const Dashboard = () => {
             trendUp: true,
         },
         {
-            title: "Total Category",
+            title: "Total Categories",
             value: stats?.totalCategories || 0,
             icon: <FiTag />,
             bgColor: "bg-red-500",
@@ -92,32 +136,52 @@ const Dashboard = () => {
         },
     ];
 
-    // Show loading state (only show if stats is still null)
-    if (loading && stats === null) {
+    // Loading state
+    if (statsLoading || sessionLoading || stats === null) {
         return (
             <div className="flex items-center justify-center min-h-96">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-4 text-lg text-gray-600">Loading dashboard...</p>
+                    <p className="text-sm text-gray-500">Verifying session and fetching data</p>
                 </div>
             </div>
         );
     }
 
-    // Show error state if stats couldn't be fetched (likely authentication issue)
-    if (error) {
+    // Error state with retry option
+    if (statsError && !sessionValid) {
         return (
             <div className="flex items-center justify-center min-h-96">
-                <div className="text-center bg-red-50 p-8 rounded-lg">
-                    <div className="text-red-500 text-4xl mb-4">🚫</div>
-                    <h2 className="text-xl font-semibold text-red-700 mb-2">Access Denied</h2>
-                    <p className="text-red-600 mb-4">{error}</p>
-                    <p className="text-sm text-gray-600">Please make sure you're logged in as an admin.</p>
+                <div className="text-center bg-red-50 p-8 rounded-lg max-w-md">
+                    <FiAlertCircle className="text-red-500 text-6xl mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-red-700 mb-2">Dashboard Access Error</h2>
+                    <p className="text-red-600 mb-4">{statsError}</p>
+                    <p className="text-sm text-gray-600 mb-6">
+                        This usually means your session has expired or you don't have admin permissions.
+                    </p>
+                    <div className="space-y-3">
+                        <button
+                            onClick={handleRetry}
+                            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            <FiRefreshCw size={16} />
+                            Retry
+                        </button>
+                        <br />
+                        <button
+                            onClick={() => navigate('/admin/login')}
+                            className="inline-flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                        >
+                            Go to Login
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
+    // Main dashboard render
     return (
         <div className="space-y-6">
             {/* Welcome Section */}
@@ -143,38 +207,40 @@ const Dashboard = () => {
                         </Link>
                     </div>
                     <div className="hidden lg:block">
-                        <img
-                            src="/api/placeholder/300/200"
-                            alt="Dashboard illustration"
-                            className="w-64"
-                        />
+                        <div className="w-64 h-32 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white text-lg font-semibold">Dashboard</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {dashboardstats.map((stat, index) => (
-                    <StatsCard key={index} {...stat} />
-                ))}
-            </div>
-
-            {/* Debug Info - Only in development */}
-            {process.env.NODE_ENV === 'development' && stats && (
+            {/* Session Status Indicator (Development Only) */}
+            {process.env.NODE_ENV === 'development' && (
                 <div className="bg-green-50 border-l-4 border-green-400 p-4">
                     <div className="flex">
                         <div className="ml-3">
                             <p className="text-sm text-green-700">
-                                <strong>✅ Dashboard loaded successfully!</strong> 
-                                {' '}Stats: {JSON.stringify(stats)}
+                                <strong>Dashboard Status:</strong> {sessionValid ? 'Session Valid' : 'Session Invalid'} | 
+                                <strong> Stats Loaded:</strong> {stats ? 'Yes' : 'No'} |
+                                <strong> Retry Count:</strong> {retryCount}
                             </p>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {dashboardStats.map((stat, index) => (
+                    <StatsCard key={index} {...stat} />
+                ))}
+            </div>
+
             {/* Products Section */}
             <div className="bg-white rounded-lg shadow-sm">
+                <div className="p-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-800">Recent Products</h2>
+                </div>
                 <ProductTable
                     data={data}
                     globalFilter={globalFilter}
@@ -188,8 +254,24 @@ const Dashboard = () => {
 
             {/* Charts Section */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Analytics Overview</h2>
                 <Charts />
             </div>
+
+            {/* Debug Panel (Development Only) */}
+            {process.env.NODE_ENV === 'development' && stats && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 mb-2">Debug Information</h3>
+                    <pre className="text-xs text-gray-600 bg-white p-3 rounded overflow-auto">
+                        {JSON.stringify({ 
+                            sessionValid, 
+                            hasStats: !!stats, 
+                            statsKeys: stats ? Object.keys(stats) : [],
+                            userInfo: user ? { name: user.name, email: user.email } : null
+                        }, null, 2)}
+                    </pre>
+                </div>
+            )}
         </div>
     );
 };
