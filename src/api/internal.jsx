@@ -256,7 +256,23 @@ export const useSessionCheck = () => {
             console.log('🔍 Checking session status...');
             const res = await API.get("/test-session");
             console.log('✅ Session check result:', res.data);
-            return res.data;
+            
+            // Enhanced validation - check both user existence and admin role
+            const sessionData = res.data;
+            const isValidAdmin = sessionData.hasUser && 
+                               sessionData.user && 
+                               sessionData.user.role === 'admin';
+                               
+            console.log('Session validation:', {
+                hasUser: sessionData.hasUser,
+                userRole: sessionData.user?.role,
+                isValidAdmin
+            });
+            
+            return {
+                ...sessionData,
+                isAdmin: isValidAdmin
+            };
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.response?.data?.error || "Session check failed";
             console.error('❌ Session check failed:', errorMessage);
