@@ -7,7 +7,7 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
     );
     const fileInputRef = useRef(null);
 
-    // FIXED: Use production backend URL instead of localhost
+    // FIXED: Use HTTPS backend URL to avoid mixed content errors
     const BACKEND_URL = "https://backend-production-5823.up.railway.app";
 
     const handleFileChange = (e) => {
