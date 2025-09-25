@@ -78,7 +78,7 @@ const Dashboard = () => {
             if (error.response?.status === 401) {
                 console.log('Unauthorized, redirecting to login');
                 toast.error('Session expired. Please log in again.');
-                navigate('/admin/login');
+                navigate('/dashboard');
             } else {
                 console.log('Error fetching dashboard data:', error.message);
                 toast.error(`Failed to load dashboard: ${error.message}`);
