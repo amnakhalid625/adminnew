@@ -58,7 +58,7 @@ const Dashboard = () => {
             if (!sessionData.hasUser || !sessionData.isAdmin) {
                 console.log('Invalid session or not admin, redirecting to login');
                 toast.error('Please log in as admin to access dashboard');
-                navigate('/dashboard');
+                navigate('/admin/login');
                 return;
             }
             
@@ -78,7 +78,7 @@ const Dashboard = () => {
             if (error.response?.status === 401) {
                 console.log('Unauthorized, redirecting to login');
                 toast.error('Session expired. Please log in again.');
-                navigate('/dashboard');
+                navigate('/admin/login');
             } else {
                 console.log('Error fetching dashboard data:', error.message);
                 toast.error(`Failed to load dashboard: ${error.message}`);
@@ -170,7 +170,7 @@ const Dashboard = () => {
                         </button>
                         <br />
                         <button
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => navigate('/admin/login')}
                             className="inline-flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
                         >
                             Go to Login
