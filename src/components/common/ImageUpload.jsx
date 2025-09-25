@@ -72,19 +72,19 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {files.map((file, index) => (
                         <div key={index} className="relative group">
-                            <img
-                                src={
-                                    file.url.startsWith("blob:")
-                                        ? file.url
-                                        : `https://backend-production-5823.up.railway.app${file.url}`
-                                }
-                                alt={file.name}
-                                className="w-full h-24 object-cover rounded-lg border"
-                                onError={(e) => {
-                                    console.error('Image load error:', e);
-                                    e.target.style.display = 'none';
-                                }}
-                            />
+<img
+  src={
+    file.url.startsWith("blob:")
+      ? file.url
+      : file.url // ✅ DIRECT CLOUDINARY URL - REMOVE BACKEND URL PREPEND
+  }
+  alt={file.name}
+  className="w-full h-24 object-cover rounded-lg border"
+  onError={(e) => {
+    console.error('Image load error:', e);
+    e.target.style.display = 'none';
+  }}
+/>
                             <button
                                 type="button"
                                 onClick={() => handleRemoveFile(file.name)}
