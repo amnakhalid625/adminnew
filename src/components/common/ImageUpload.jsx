@@ -7,36 +7,16 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
     );
     const fileInputRef = useRef(null);
 
-    // ✅ MAIN FIX: Proper image URL function
-    const getImageUrl = (file) => {
-        // If it's a new upload (blob URL), return as is
-        if (file.url.startsWith("blob:")) {
-            return file.url;
-        }
-        
-        // For existing images from backend
-        let imagePath = file.url;
-        
-        // Clean up the path
-        if (!imagePath.startsWith('/')) {
-            imagePath = '/' + imagePath;
-        }
-        
-        // Remove double slashes
-        imagePath = imagePath.replace(/\/+/g, '/');
-        
-        // Return with backend URL
-        return `http://localhost:8080${imagePath}`;
-    };
-
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
         
+        // Log file details for debugging
         selectedFiles.forEach(file => {
             console.log('Selected file:', {
                 name: file.name,
                 type: file.type,
-                size: file.size
+                size: file.size,
+                lastModified: file.lastModified
             });
         });
 
@@ -51,7 +31,8 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
 
         if (onUpload) {
             const newFiles = updatedFiles.map((f) => f.file).filter(Boolean);
-            onUpload(newFiles);
+            console.log('Uploading files:', newFiles);
+            onUpload(newFiles); // Pass only actual new files
         }
     };
 
@@ -91,42 +72,32 @@ const ImageUpload = ({ onUpload, existingImages = [] }) => {
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {files.map((file, index) => (
                         <div key={index} className="relative group">
-                            <div className="relative w-full h-24 bg-gray-100 rounded-lg border overflow-hidden">
-                                <img
-                                    src={getImageUrl(file)}
-                                    alt={file.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        console.error('Image load error for:', file.name);
-                                        console.error('Tried URL:', getImageUrl(file));
-                                        e.target.style.display = 'none';
-                                        
-                                        // Show error message
-                                        const parent = e.target.parentElement;
-                                        if (parent && !parent.querySelector('.error-placeholder')) {
-                                            const errorDiv = document.createElement('div');
-                                            errorDiv.className = 'error-placeholder absolute inset-0 flex items-center justify-center text-red-400 text-xs bg-red-50';
-                                            errorDiv.innerHTML = '❌ Load Error';
-                                            parent.appendChild(errorDiv);
-                                        }
-                                    }}
-                                    onLoad={() => {
-                                        console.log('✅ Image loaded:', file.name);
-                                    }}
-                                />
-                            </div>
+                            <img
+                                src={
+                                    file.url.startsWith("blob:")
+                                        ? file.url
+                                        : `http://localhost:8080${file.url}`
+                                }
+                                alt={file.name}
+                                className="w-full h-24 object-cover rounded-lg border"
+                                onError={(e) => {
+                                    console.error('Image load error:', e);
+                                    e.target.style.display = 'none';
+                                }}
+                            />
                             <button
                                 type="button"
                                 onClick={() => handleRemoveFile(file.name)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 <X size={14} />
                             </button>
-                            
-                            {/* File name display */}
-                            <div className="text-xs text-gray-500 mt-1 text-center truncate" title={file.name}>
-                                {file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
-                            </div>
+                            {/* Debug info - remove in production */}
+                            {process.env.NODE_ENV === 'development' && (
+                                <div className="text-xs text-gray-500 mt-1 text-center">
+                                    {file.file?.type || 'existing'}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
