@@ -58,7 +58,7 @@ const Dashboard = () => {
             if (!sessionData.hasUser || !sessionData.isAdmin) {
                 console.log('Invalid session or not admin, redirecting to login');
                 toast.error('Please log in as admin to access dashboard');
-                navigate('/admin/login');
+                navigate('/login');
                 return;
             }
             
@@ -170,7 +170,7 @@ const Dashboard = () => {
                         </button>
                         <br />
                         <button
-                            onClick={() => navigate('/admin/login')}
+                            onClick={() => navigate('/login')}
                             className="inline-flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
                         >
                             Go to Login

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState, useCallback } from "react";
 
-const BACKEND_URL = "https://backend-production-5823.up.railway.app/api";
+const BACKEND_URL = "http://localhost:8080/api";
 
 const API = axios.create({
     baseURL: BACKEND_URL,
@@ -254,7 +254,7 @@ export const useSessionCheck = () => {
         setError(null);
         try {
             console.log('🔍 Checking session status...');
-            const res = await API.get("/test-session");
+            const res = await API.get("/auth/test-session");
             console.log('✅ Session check result:', res.data);
             
             // Enhanced validation - check both user existence and admin role
